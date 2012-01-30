@@ -49,8 +49,8 @@ class Tests_Controller_Form_ extends \TestCase
 		self::$curl->set_post_data($post);
 		$output = self::$curl->post();
 
-		$this->assertRegExp('!<input name="name" value="&lt;s&gt;name&lt;/s&gt;&quot;&amp;&#39;" type="text" id="form_name" />!u', $output);
-		$this->assertRegExp('!<textarea rows="6" cols="70" name="comment" id="form_comment">&lt;s&gt;comment&lt;/s&gt;&quot;&amp;&#39;</textarea>!u', $output);
+		$this->assertRegExp('!<input type="text" required="required" value="&lt;s&gt;name&lt;/s&gt;&quot;&amp;&#39;" id="name" name="name" />!u', $output);
+		$this->assertRegExp('!<textarea cols="70" rows="6" required="required" id="comment" name="comment">&lt;s&gt;comment&lt;/s&gt;&quot;&amp;&#39;</textarea>!u', $output);
 		$this->assertRegExp('/メールアドレス 欄は必須です。/u', $output);
 	}
 	
