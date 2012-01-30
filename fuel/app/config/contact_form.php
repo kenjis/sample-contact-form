@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * Sample Contact Form
  *
@@ -6,11 +6,12 @@
  * @copyright  2011 Kenji Suzuki
  * @license    MIT License http://www.opensource.org/licenses/mit-license.php
  */
-?>
-<p>Index</p>
 
-<?php if (isset($html_error)): ?>
-<?php echo $html_error; ?>
-<?php endif; ?>
-
-<?php echo $html_form; ?>
+/**
+ * Sample Contact Form config
+ */
+return array(
+	'admin_name'   => '管理者',
+	'admin_email'  => 'admin@example.jp',
+	'mail_subject' => 'コンタクトフォーム',
+);

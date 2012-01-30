@@ -21,6 +21,6 @@ https://github.com/kenjis/sample-contact-form
 
 LICENSE ファイルを参照ください。
 
-## 参照
+## 参考
 
 - FuelPHP http://fuelphp.com/

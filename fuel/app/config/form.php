@@ -1,17 +1,19 @@
 <?php
 /**
- * Sample Contact Form
- *
- * @author     Kenji Suzuki https://github.com/kenjis
- * @copyright  2011 Kenji Suzuki
- * @license    MIT License http://www.opensource.org/licenses/mit-license.php
- */
-
-/**
- * The contact form settings.
+ * FuelPHP Form class config
  */
 return array(
-	'admin_name'   => '管理者',
-	'admin_email'  => 'admin@example.jp',
-	'mail_subject' => 'コンタクトフォーム',
+	'prep_value'            => true,
+	'auto_id'               => true,
+	'auto_id_prefix'        => 'form_',
+	'form_method'           => 'post',
+	'form_template'         => "\n\t\t{open}\n\t\t<table>\n{fields}\n\t\t</table>\n\t\t{close}\n",
+	'fieldset_template'     => "\n\t\t<tr><td colspan=\"2\">{open}<table>\n{fields}</table></td></tr>\n\t\t{close}\n",
+	'field_template'        => "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{field} {help_text} {error_msg}</td>\n\t\t</tr>\n",
+	'multi_field_template'  => "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{group_label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{fields}\n\t\t\t\t{field} {label}<br />\n{fields}{help_text}\t\t\t{error_msg}\n\t\t\t</td>\n\t\t</tr>\n",
+	'error_template'        => '<span>{error_msg}</span>',
+	'required_mark'         => '(*)',
+	'inline_errors'         => false,
+	'error_class'           => 'validation_error',
+	'help_text'             => '<span>{help_text}</span>',
 );

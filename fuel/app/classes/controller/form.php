@@ -23,49 +23,78 @@ class Controller_Form extends Controller_Template
 		$this->response->set_header('X-FRAME-OPTIONS', 'SAMEORIGIN');
 	}
 	
-	public function validate()
+	public function form()
 	{
-		$val = Validation::forge();
+		$form = Fieldset::forge();
 
-		$val->add('name', '名前')
+		$form->add('name', '名前')
 			->add_rule('trim')
 			->add_rule('required')
 			->add_rule('no_controll')
 			->add_rule('max_length', 20);
 
-		$val->add('email', 'メールアドレス')
+		$form->add('email', 'メールアドレス')
 			->add_rule('trim')
 			->add_rule('required')
 			->add_rule('no_controll')
 			->add_rule('valid_email');
 
-		$val->add('comment', 'コメント')
+		$form->add('comment', 'コメント', 
+					array('type' => 'textarea', 'cols' => 70, 'rows' => 6))
 			->add_rule('required')
 			->add_rule('max_length', 400);
 
-		$val->add('gender', '性別')
-			->add_rule('in_array', array('男性', '女性'));
+		$ops = array(
+			'男性' => '男性', 
+			'女性' => '女性',
+		);
+		$form->add('gender', '性別', 
+					array('options' => $ops, 'type' => 'radio'))
+			->add_rule('in_array', $ops);
 		
-		$val->add('kind', '問い合わせの種類')
-			->add_rule('in_array', array('製品購入前のお問い合わせ', '製品購入後のお問い合わせ', 'その他'));
+		$ops = array(
+			''                         => '',
+			'製品購入前のお問い合わせ' => '製品購入前のお問い合わせ', 
+			'製品購入後のお問い合わせ' => '製品購入後のお問い合わせ', 
+			'その他'                   => 'その他',
+		);
+		$form->add('kind', '問い合わせの種類', 
+					array('options' => $ops, 'type' => 'select'))
+			->add_rule('in_array', $ops);
 		
-		$val->add('lang', '使用プログラミング言語')
-			->add_rule('in_array', array('PHP', 'Perl', 'Python'))
+		$ops = array(
+			'PHP'    => 'PHP', 
+			'Perl'   => 'Perl', 
+			'Python' => 'Python',
+		);
+		$form->add('lang', '使用プログラミング言語', 
+					array('options' => $ops, 'type' => 'checkbox'))
+			->add_rule('in_array', $ops)
 			->add_rule('not_required_array');
 		
-		return $val;
+		$form->add('submit', '', array('type'=>'submit', 'value' => '確認'));
+		
+		return $form;
 	}
 	
 	public function action_index()
 	{
+		$form = $this->form();
+		
+		if (Input::method() === 'POST')
+		{
+			$form->repopulate();
+		}
+		
 		$this->template->title = 'コンタクトフォーム';
 		$this->template->content = View::forge('form/index');
+		$this->template->content->set_safe('html_form', $form->build('/form/confirm'));
 	}
-	
 	
 	public function action_confirm()
 	{
-		$val = $this->validate();
+		$form = $this->form();
+		$val  = $form->validation();
 		
 		if ($val->run())
 		{
@@ -75,9 +104,12 @@ class Controller_Form extends Controller_Template
 		}
 		else
 		{
+			$form->repopulate();
+			
 			$this->template->title = 'コンタクトフォーム: エラー';
 			$this->template->content = View::forge('form/index');
 			$this->template->content->set_safe('html_error', $val->show_errors());
+			$this->template->content->set_safe('html_form', $form->build('/form/confirm'));
 		}
 	}
 
@@ -94,19 +126,20 @@ class Controller_Form extends Controller_Template
 			throw new HttpInvalidInputException('Invalid input data');
 		}
 
-		$val = $this->validate();
+		$val = $this->form()->validation();
 		
 		if ($val->run())
 		{
 			$post = $val->validated();
 			
-			\Config::load('form', true);
+			\Config::load('contact_form', true);
+			//Debug::dump(\Config::get('contact_form'));
 			
 			$data['from']      = $post['email'];
 			$data['from_name'] = $post['name'];
-			$data['to']        = \Config::get('form.admin_email');
-			$data['to_name']   = \Config::get('form.admin_name');
-			$data['subject']   = \Config::get('form.mail_subject');
+			$data['to']        = \Config::get('contact_form.admin_email');
+			$data['to_name']   = \Config::get('contact_form.admin_name');
+			$data['subject']   = \Config::get('contact_form.mail_subject');
 			
 			$ip           = \Input::ip();
 			$agent        = \Input::user_agent();
@@ -138,11 +171,21 @@ END;
 			{
 				$this->template->title = 'コンタクトフォーム: 送信エラー';
 				$this->template->content = View::forge('form/error');
+				
+				\Log::error(
+					__METHOD__ . ' email validation error: ' .
+					$e->getMessage()
+				);
 			}
 			catch(EmailSendingFailedException $e)
 			{
 				$this->template->title = 'コンタクトフォーム: 送信エラー';
 				$this->template->content = View::forge('form/error');
+				
+				\Log::error(
+					__METHOD__ . ' email sending error: ' .
+					$e->getMessage()
+				);
 			}
 		}
 		else
