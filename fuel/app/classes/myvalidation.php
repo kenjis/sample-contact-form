@@ -8,13 +8,13 @@
  */
 
 /**
- * Extended Validation Class
+ * My Validation Rules
  *
  * @author     Kenji Suzuki https://github.com/kenjis
  * @copyright  2011 Kenji Suzuki
  * @license    MIT License http://www.opensource.org/licenses/mit-license.php
  */
-class Validation extends \Fuel\Core\Validation
+class MyValidation
 {
 	/**
 	 * Validate if there is no controll char
@@ -22,7 +22,7 @@ class Validation extends \Fuel\Core\Validation
 	 * @param   string
 	 * @return  true|Exception
 	 */
-	public function _validation_no_controll($val)
+	public static function _validation_no_controll($val)
 	{
 		if (preg_match('/\A[[:^cntrl:]]*\z/u', $val) === 1)
 		{
@@ -48,9 +48,9 @@ class Validation extends \Fuel\Core\Validation
 	 * @param   array  valid options
 	 * @return  true|Exception
 	 */
-	public function _validation_in_array($val, $compare)
+	public static function _validation_in_array($val, $compare)
 	{
-		if ($this->_empty($val))
+		if (Validation::_empty($val))
 		{
 			return true;
 		}
@@ -78,7 +78,7 @@ class Validation extends \Fuel\Core\Validation
 	 * @param   array  valid options
 	 * @return  true|Exception
 	 */
-	public function _validation_not_required_array($val)
+	public static function _validation_not_required_array($val)
 	{
 		if (is_array($val))
 		{

@@ -95,6 +95,7 @@ class Controller_Form extends Controller_Template
 	{
 		$form = $this->form();
 		$val  = $form->validation();
+		$val->add_callable('myvalidation');
 		
 		if ($val->run())
 		{
@@ -125,8 +126,9 @@ class Controller_Form extends Controller_Template
 			);
 			throw new HttpInvalidInputException('Invalid input data');
 		}
-
+		
 		$val = $this->form()->validation();
+		$val->add_callable('myvalidation');
 		
 		if ($val->run())
 		{

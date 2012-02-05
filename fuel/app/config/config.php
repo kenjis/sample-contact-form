@@ -114,8 +114,8 @@ return array(
 		 * dependant on how much input data there is.
 		 */
 		'input_filter'  => array(
-			'Security::check_encoding',
-			'Security::check_controll',
+			'MySecurity::check_encoding',
+			'MySecurity::check_controll',
 		),
 
 		/**
@@ -124,7 +124,7 @@ return array(
 		 * WARNING: Using xss_clean will cause a performance hit.  How much is
 		 * dependant on how much input data there is.
 		 */
-		'output_filter'  => array('Security::htmlspecialchars'),
+		'output_filter'  => array('MySecurity::htmlspecialchars'),
 
 		/**
 		 * Whether to automatically filter view data

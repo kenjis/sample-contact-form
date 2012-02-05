@@ -14,7 +14,7 @@
  * @copyright  2011 Kenji Suzuki
  * @license    MIT License http://www.opensource.org/licenses/mit-license.php
  */
-class Form extends \Fuel\Core\Form
+class MyForm extends \Fuel\Core\Form
 {
 	/**
 	 * Prep Value

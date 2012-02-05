@@ -14,7 +14,7 @@
  * @copyright  2011 Kenji Suzuki
  * @license    MIT License http://www.opensource.org/licenses/mit-license.php
  */
-class Security extends \Fuel\Core\Security
+class MySecurity extends \Fuel\Core\Security
 {
 
 	public static function htmlspecialchars($value)

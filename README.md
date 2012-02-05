@@ -24,3 +24,4 @@ LICENSE ファイルを参照ください。
 ## 参考
 
 - FuelPHP http://fuelphp.com/
+- http://d.hatena.ne.jp/Kenji_s/20111212/1323662755
