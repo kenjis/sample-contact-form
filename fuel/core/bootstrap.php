@@ -29,6 +29,9 @@ define('MBSTRING', function_exists('mb_get_info'));
  */
 register_shutdown_function(function ()
 {
+	// Fire off the shutdown events
+	Event::shutdown();
+
 	load_error_classes();
 	return \Error::shutdown_handler();
 });
@@ -58,7 +61,7 @@ function setup_autoloader()
 		'Fuel\\Core\\Asset_Instance'  => COREPATH.'classes/asset/instance.php',
 
 		'Fuel\\Core\\Cache'                     => COREPATH.'classes/cache.php',
-		'Fuel\\Core\\CacheNotFoundException'    => COREPATH.'classes/cache.php',
+		'Fuel\\Core\\CacheNotFoundException'    => COREPATH.'classes/cache/notfound.php',
 		'Fuel\\Core\\CacheExpiredException'     => COREPATH.'classes/cache.php',
 		'Fuel\\Core\\Cache_Handler_Driver'      => COREPATH.'classes/cache/handler/driver.php',
 		'Fuel\\Core\\Cache_Handler_Json'        => COREPATH.'classes/cache/handler/json.php',
@@ -82,6 +85,7 @@ function setup_autoloader()
 		'Fuel\\Core\\Controller'           => COREPATH.'classes/controller.php',
 		'Fuel\\Core\\Controller_Rest'      => COREPATH.'classes/controller/rest.php',
 		'Fuel\\Core\\Controller_Template'  => COREPATH.'classes/controller/template.php',
+		'Fuel\\Core\\Controller_Hybrid'    => COREPATH.'classes/controller/hybrid.php',
 
 		'Fuel\\Core\\Cookie'               => COREPATH.'classes/cookie.php',
 
@@ -109,7 +113,6 @@ function setup_autoloader()
 
 		'Fuel\\Core\\Fuel'           => COREPATH.'classes/fuel.php',
 		'Fuel\\Core\\FuelException'  => COREPATH.'classes/fuel.php',
-		'Fuel\\Core\\Fuel_Exception' => COREPATH.'classes/fuel.php',
 
 		'Fuel\\Core\\Finder'         => COREPATH.'classes/finder.php',
 
@@ -161,7 +164,14 @@ function setup_autoloader()
 
 		'Fuel\\Core\\Input'      => COREPATH.'classes/input.php',
 
-		'Fuel\\Core\\Lang'       => COREPATH.'classes/lang.php',
+		'Fuel\\Core\\Lang'               => COREPATH.'classes/lang.php',
+		'Fuel\\Core\\LangException'      => COREPATH.'classes/lang.php',
+		'Fuel\\Core\\Lang_File'          => COREPATH.'classes/lang/file.php',
+		'Fuel\\Core\\Lang_Ini'           => COREPATH.'classes/lang/ini.php',
+		'Fuel\\Core\\Lang_Json'          => COREPATH.'classes/lang/json.php',
+		'Fuel\\Core\\Lang_Interface'     => COREPATH.'classes/lang/interface.php',
+		'Fuel\\Core\\Lang_Php'           => COREPATH.'classes/lang/php.php',
+		'Fuel\\Core\\Lang_Yml'           => COREPATH.'classes/lang/yml.php',
 
 		'Fuel\\Core\\Log'        => COREPATH.'classes/log.php',
 
@@ -171,6 +181,8 @@ function setup_autoloader()
 
 		'Fuel\\Core\\Model'      => COREPATH.'classes/model.php',
 		'Fuel\\Core\\Model_Crud' => COREPATH.'classes/model/crud.php',
+
+		'Fuel\\Core\\Module'     => COREPATH.'classes/module.php',
 
 		'Fuel\\Core\\Mongo_Db'           => COREPATH.'classes/mongo/db.php',
 		'Fuel\\Core\\Mongo_DbException'  => COREPATH.'classes/mongo/db.php',
@@ -184,15 +196,15 @@ function setup_autoloader()
 
 		'Fuel\\Core\\Profiler'             => COREPATH.'classes/profiler.php',
 
-		'Fuel\\Core\\Request'              => COREPATH.'classes/request.php',
-		'Fuel\\Core\\Request404Exception'  => COREPATH.'classes/request.php',
-		'Fuel\\Core\\Request_Driver'       => COREPATH.'classes/request/driver.php',
-		'Fuel\\Core\\RequestException'     => COREPATH.'classes/request/driver.php',
-		'Fuel\\Core\\Request_Curl'         => COREPATH.'classes/request/curl.php',
-		'Fuel\\Core\\Request_Soap'         => COREPATH.'classes/request/soap.php',
+		'Fuel\\Core\\Request'                 => COREPATH.'classes/request.php',
+		'Fuel\\Core\\Request_Driver'          => COREPATH.'classes/request/driver.php',
+		'Fuel\\Core\\RequestException'        => COREPATH.'classes/request/driver.php',
+		'Fuel\\Core\\RequestStatusException'  => COREPATH.'classes/request/driver.php',
+		'Fuel\\Core\\Request_Curl'            => COREPATH.'classes/request/curl.php',
+		'Fuel\\Core\\Request_Soap'            => COREPATH.'classes/request/soap.php',
 
-		'Fuel\\Core\\Redis'                => COREPATH.'classes/redis.php',
-		'Fuel\\Core\\RedisException'       => COREPATH.'classes/redis.php',
+		'Fuel\\Core\\Redis'                   => COREPATH.'classes/redis.php',
+		'Fuel\\Core\\RedisException'          => COREPATH.'classes/redis.php',
 
 		'Fuel\\Core\\Response'  => COREPATH.'classes/response.php',
 

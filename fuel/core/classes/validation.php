@@ -27,7 +27,6 @@ namespace Fuel\Core;
  */
 class Validation
 {
-
 	/**
 	 * @var  Validation  keeps a reference to an instance of Validation while it is being run
 	 */
@@ -37,17 +36,6 @@ class Validation
 	 * @var  Fieldset_Field  keeps a reference to an instance of the Fieldset_Field validation is being run on
 	 */
 	protected static $active_field;
-
-	/**
-	 * This method is deprecated...use forge() instead.
-	 *
-	 * @deprecated until 1.2
-	 */
-	public static function factory($fieldset = 'default')
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a forge() instead.', __METHOD__);
-		return static::forge($fieldset);
-	}
 
 	/**
 	* Gets a new instance of the Validation class.
@@ -139,6 +127,11 @@ class Validation
 	protected $callables = array();
 
 	/**
+	 * @var  bool  $global_input_fallback  wether to fall back to Input::param
+	 */
+	protected $global_input_fallback = true;
+
+	/**
 	 * @var  array  contains validation error messages, will overwrite those from lang files
 	 */
 	protected $error_messages = array();
@@ -156,6 +149,7 @@ class Validation
 		}
 
 		$this->callables = array($this);
+		$this->global_input_fallback = \Config::get('validation.global_input_fallback', true);
 	}
 
 	/**
@@ -335,7 +329,7 @@ class Validation
 	 */
 	public function run($input = null, $allow_partial = false, $temp_callables = array())
 	{
-		if (is_null($input) && \Input::method() != 'POST')
+		if (is_null($input) and \Input::method() != 'POST')
 		{
 			return false;
 		}
@@ -492,7 +486,7 @@ class Validation
 
 		if ( ! array_key_exists($key, $this->input))
 		{
-			$this->input[$key] = \Input::param($key, $default);
+			$this->input[$key] =  $this->global_input_fallback ? \Input::param($key, $default) : $default;
 		}
 
 		return $this->input[$key];
@@ -534,17 +528,6 @@ class Validation
 		}
 
 		return array_key_exists($field, $this->errors) ? $this->errors[$field] : $default;
-	}
-
-	/**
-	 * Alias of Validation::error() for backwards compatibility
-	 *
-	 * @depricated  Remove in v1.2
-	 */
-	public function errors($field = null, $default = false)
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated. Please use Validation::error() instead.', __METHOD__);
-		return static::error($field, $default);
 	}
 
 	/**
@@ -695,7 +678,13 @@ class Validation
 	 */
 	public function _validation_match_field($val, $field)
 	{
-		return $this->_empty($val) || $this->input($field) === $val;
+		if ($this->input($field) !== $val)
+		{
+			$validating = $this->active_field();
+			throw new \Validation_Error($validating, $val, array('match_field' => array($field)), array($this->field($field)->label));
+		}
+
+		return true;
 	}
 
 	/**
@@ -845,6 +834,7 @@ class Validation
 		$pattern .= in_array('newlines', $flags) ? "\n" : '';
 		$pattern .= in_array('tabs', $flags) ? "\t" : '';
 		$pattern .= in_array('dots', $flags) && ! in_array('punctuation', $flags) ? '\.' : '';
+		$pattern .= in_array('commas', $flags) && ! in_array('punctuation', $flags) ? ',' : '';
 		$pattern .= in_array('punctuation', $flags) ? "\.,\!\?:;\&" : '';
 		$pattern .= in_array('dashes', $flags) ? '_\-' : '';
 		$pattern = empty($pattern) ? '/^(.*)$/' : ('/^(['.$pattern.'])+$/');

@@ -37,17 +37,6 @@ class Fieldset
 	protected static $_instances = array();
 
 	/**
-	 * This method is deprecated...use forge() instead.
-	 *
-	 * @deprecated until 1.2
-	 */
-	public static function factory($name = 'default', array $config = array())
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a forge() instead.', __METHOD__);
-		return static::forge($name, $config);
-	}
-
-	/**
 	 * Create Fieldset object
 	 *
 	 * @param   string    Identifier for this fieldset
@@ -203,6 +192,16 @@ class Fieldset
 		}
 
 		return $this->form;
+	}
+
+	/**
+	 * Set the tag to be used for this fieldset
+	 *
+	 * @param  string  $tag
+	 */
+	public function set_fieldset_tag($tag)
+	{
+		$this->fieldset_tag = $tag;
 	}
 
 	/**
@@ -387,7 +386,7 @@ class Fieldset
 		{
 			foreach ($this->fieldset_children as $fieldset)
 			{
-				if (($field = $fieldset->field($name) !== false))
+				if (($field = $fieldset->field($name)) !== false)
 				{
 					return $field;
 				}
@@ -504,17 +503,10 @@ class Fieldset
 	/**
 	 * Set all fields to the input from get or post (depends on the form method attribute)
 	 *
-	 * @param   array|object  input for initial population of fields, this is deprecated - you should use populate() instea
 	 * @return  Fieldset      this, to allow chaining
 	 */
-	public function repopulate($deprecated = null)
+	public function repopulate()
 	{
-		// The following usage will be deprecated in Fuel 1.1
-		if ( ! is_null($deprecated))
-		{
-			return $this->populate($deprecated, true);
-		}
-
 		$fields = $this->field(null, true);
 		foreach ($fields as $f)
 		{
@@ -617,17 +609,6 @@ class Fieldset
 	public function validated($field = null)
 	{
 		return $this->validation()->validated($field);
-	}
-
-	/**
-	 * Alias of $this->error() for backwards compatibility
-	 *
-	 * @depricated  Remove in v1.2
-	 */
-	public function errors($field = null)
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated. Please use Fieldset::error() instead.', __METHOD__);
-		return $this->error($field);
 	}
 
 	/**

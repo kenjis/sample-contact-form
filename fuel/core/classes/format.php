@@ -32,17 +32,6 @@ class Format
 	protected $_data = array();
 
 	/**
-	 * This method is deprecated...use forge() instead.
-	 *
-	 * @deprecated until 1.2
-	 */
-	public static function factory($data = null, $from_type = null)
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a forge() instead.', __METHOD__);
-		return static::forge($data, $from_type);
-	}
-
-	/**
 	 * Returns an instance of the Format object.
 	 *
 	 *     echo Format::forge(array('foo' => 'bar'))->to_xml();
@@ -102,6 +91,11 @@ class Format
 			$data = get_object_vars($data);
 		}
 
+		if (empty($data))
+		{
+			return array();
+		}
+
 		foreach ($data as $key => $value)
 		{
 			if (is_object($value) or is_array($value))
@@ -144,7 +138,7 @@ class Format
 		}
 
 		// Force it to be something useful
-		if ( ! is_array($data) AND ! is_object($data))
+		if ( ! is_array($data) and ! is_object($data))
 		{
 			$data = (array) $data;
 		}
@@ -155,14 +149,14 @@ class Format
 			if (is_numeric($key))
 			{
 				// make string key...
-				$key = (Inflector::singularize($basenode) != $basenode) ? Inflector::singularize($basenode) : 'item';
+				$key = (\Inflector::singularize($basenode) != $basenode) ? \Inflector::singularize($basenode) : 'item';
 			}
 
 			// replace anything not alpha numeric
 			$key = preg_replace('/[^a-z_\-0-9]/i', '', $key);
 
 			// if there is another array found recrusively call this function
-			if (is_array($value) || is_object($value))
+			if (is_array($value) or is_object($value))
 			{
 				$node = $structure->addChild($key);
 
@@ -190,18 +184,26 @@ class Format
 	 * To CSV conversion
 	 *
 	 * @param   mixed   $data
+	 * @param   mixed   $separator
 	 * @return  string
 	 */
-	public function to_csv($data = null)
+	public function to_csv($data = null, $separator = ',')
 	{
-		if ($data == null)
+		if ($data === null)
 		{
 			$data = $this->_data;
 		}
 
-		// Multi-dimentional array
-		if (is_array($data) and isset($data[0]))
+		if (is_object($data) and ! $data instanceof \Iterator)
 		{
+			$data = $this->to_array($data);
+		}
+
+		// Multi-dimensional array
+		if (is_array($data) and \Arr::is_multi($data))
+		{
+			$data = array_values($data);
+
 			if (\Arr::is_assoc($data[0]))
 			{
 				$headings = array_keys($data[0]);
@@ -211,7 +213,6 @@ class Format
 				$headings = array_shift($data);
 			}
 		}
-
 		// Single array
 		else
 		{
@@ -219,10 +220,11 @@ class Format
 			$data = array($data);
 		}
 
-		$output = implode(',', $headings) . "\n";
+		$output = "\"".implode('"' . $separator . '"', $headings) . "\"\n";
+
 		foreach ($data as &$row)
 		{
-			$output .= '"' . implode('","', (array) $row) . "\"\n";
+			$output .= '"' . implode('"' . $separator . '"', (array) $row) . "\"\n";
 		}
 
 		return rtrim($output, "\n");
@@ -232,9 +234,10 @@ class Format
 	 * To JSON conversion
 	 *
 	 * @param   mixed  $data
+	 * @param   bool   wether to make the json pretty
 	 * @return  string
 	 */
-	public function to_json($data = null)
+	public function to_json($data = null, $pretty = false)
 	{
 		if ($data == null)
 		{
@@ -244,21 +247,22 @@ class Format
 		// To allow exporting ArrayAccess objects like Orm\Model instances they need to be
 		// converted to an array first
 		$data = (is_array($data) or is_object($data)) ? $this->to_array($data) : $data;
-		return json_encode($data);
+		return $pretty ? static::pretty_json($data) : json_encode($data);
 	}
 
 	/**
 	 * To JSONP conversion
 	 *
-	 * @param mixed $data
-	 * @return string
+	 * @param   mixed  $data
+	 * @param   bool   wether to make the json pretty
+	 * @return  string
 	 */
-	public function to_jsonp($data = null)
+	public function to_jsonp($data = null, $pretty = false)
 	{
 		 $callback = \Input::param('callback');
 		 is_null($callback) and $callback = 'response';
 
-		 return $callback.'('.$this->to_json($data).')';
+		 return $callback.'('.$this->to_json($data, $pretty).')';
 	}
 
 	/**
@@ -409,8 +413,12 @@ class Format
 				}
 			}
 
-			// The substr removes " from start and end
-			$data_fields = explode('","', trim($row, '"'));
+			// If present, remove the " from start and end
+			substr($row, 0, 1) === '"' and $row = substr($row,1);
+			substr($row, -1) === '"' and $row = substr($row,0,-1);
+
+			// Extract the fields from the row
+			$data_fields = explode('","', $row);
 
 			if (count($data_fields) == count($headings))
 			{
@@ -444,5 +452,89 @@ class Format
 		return unserialize(trim($string));
 	}
 
+	/**
+	 * Makes json pretty the json output.
+	 * Barrowed from http://www.php.net/manual/en/function.json-encode.php#80339
+	 *
+	 * @param   string  $json  json encoded array
+	 * @return  string|false  pretty json output or false when the input was not valid
+	 */
+	protected static function pretty_json($data)
+	{
+		$json = json_encode($data);
+		if ( ! $json)
+		{
+			return false;
+		}
+
+		$tab = "\t";
+		$newline = "\n";
+		$new_json = "";
+		$indent_level = 0;
+		$in_string = false;
+		$len = strlen($json);
+
+		for ($c = 0; $c < $len; $c++)
+		{
+			$char = $json[$c];
+			switch($char)
+			{
+				case '{':
+				case '[':
+					if ( ! $in_string)
+					{
+						$new_json .= $char.$newline.str_repeat($tab, $indent_level+1);
+						$indent_level++;
+					}
+					else
+					{
+						$new_json .= $char;
+					}
+					break;
+				case '}':
+				case ']':
+					if ( ! $in_string)
+					{
+						$indent_level--;
+						$new_json .= $newline.str_repeat($tab, $indent_level).$char;
+					}
+					else
+					{
+						$new_json .= $char;
+					}
+					break;
+				case ',':
+					if ( ! $in_string)
+					{
+						$new_json .= ','.$newline.str_repeat($tab, $indent_level);
+					}
+					else
+					{
+						$new_json .= $char;
+					}
+					break;
+				case ':':
+					if ( ! $in_string)
+					{
+						$new_json .= ': ';
+					}
+					else
+					{
+						$new_json .= $char;
+					}
+					break;
+				case '"':
+					if ($c > 0 and $json[$c-1] !== '\\')
+					{
+						$in_string = ! $in_string;
+					}
+				default:
+					$new_json .= $char;
+					break;
+			}
+		}
+
+		return $new_json;
+	}
 }
 

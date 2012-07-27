@@ -6,7 +6,7 @@
  * @version		1.0
  * @author		Fuel Development Team
  * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
+ * @copyright	2010 - 2012 Fuel Development Team
  * @link		http://fuelphp.com
  */
 
@@ -14,7 +14,6 @@ namespace Orm;
 
 class BelongsTo extends Relation
 {
-
 	protected $singular = true;
 
 	protected $key_from = array();
@@ -54,6 +53,14 @@ class BelongsTo extends Relation
 		{
 			$query->where(current($this->key_to), $from->{$key});
 			next($this->key_to);
+		}
+		if ($where = \Arr::get($this->conditions, 'where')) 
+		{
+			$query->where($where);
+		}
+		if ($order_by = \Arr::get($this->conditions, 'order_by'))
+		{
+			$query->order_by($order_by);
 		}
 		return $query->get_one();
 	}

@@ -26,17 +26,6 @@ abstract class Auth_Group_Driver extends \Auth_Driver
 	 */
 	protected static $_instances = array();
 
-	/**
-	 * This method is deprecated...use forge() instead.
-	 * 
-	 * @deprecated until 1.2
-	 */
-	public static function factory(array $config = array())
-	{
-		\Log::warning('This method is deprecated.  Please use a forge() instead.', __METHOD__);
-		return static::forge($config);
-	}
-
 	public static function forge(array $config = array())
 	{
 		// default driver id to driver name when not given
@@ -97,7 +86,7 @@ abstract class Auth_Group_Driver extends \Auth_Driver
 		foreach (\Auth::verified() as $v)
 		{
 			// ... and check all those their groups
-			$gs = $v->get_user_groups();
+			$gs = $v->get_groups();
 			foreach ($gs as $g_id)
 			{
 				// ... and try to validate if its group is this one

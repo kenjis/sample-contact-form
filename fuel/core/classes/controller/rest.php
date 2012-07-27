@@ -18,12 +18,12 @@ abstract class Controller_Rest extends \Controller
 	/**
 	 * @var  integer  status code to return in case a not defined action is called
 	 */
-	protected $no_method_status = 404;
+	protected $no_method_status = 405;
 
 	/**
 	 * @var  integer  status code to return in case the called action doesn't return data
 	 */
-	protected $no_data_status = 404;
+	protected $no_data_status = 204;
 
 	/**
 	 * @var  string  the detected response format
@@ -80,7 +80,6 @@ abstract class Controller_Rest extends \Controller
 	 */
 	public function router($resource, array $arguments)
 	{
-
 		\Config::load('rest', true);
 
 		// If no (or an invalid) format is given, auto detect the format
@@ -106,6 +105,12 @@ abstract class Controller_Rest extends \Controller
 			// If they call user, go to $this->post_user();
 			$controller_method = strtolower(\Input::method()) . '_' . $resource;
 
+			// Fall back to action_ if no rest method is provided
+			if ( ! method_exists($this, $controller_method))
+			{
+				$controller_method = 'action_'.$resource;
+			}
+
 			// If method is not available, set status code to 404
 			if (method_exists($this, $controller_method))
 			{
@@ -119,7 +124,7 @@ abstract class Controller_Rest extends \Controller
 		}
 		else
 		{
-			$this->response(array('status'=>0, 'error'=> 'Not Authorized'), 401);
+			$this->response(array('status'=> 0, 'error'=> 'Not Authorized'), 401);
 		}
 	}
 
@@ -323,10 +328,10 @@ abstract class Controller_Rest extends \Controller
 		if ( ! static::_check_login($username, $password))
 		{
 			static::_force_login();
-			return FALSE;
+			return false;
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	protected function _prepare_digest_auth()
@@ -353,7 +358,7 @@ abstract class Controller_Rest extends \Controller
 		if (empty($digest_string))
 		{
 			static::_force_login($uniqid);
-			return FALSE;
+			return false;
 		}
 
 		// We need to retrieve authentication informations from the $auth_data variable
@@ -363,7 +368,7 @@ abstract class Controller_Rest extends \Controller
 		if ( ! array_key_exists('username', $digest) or ! static::_check_login($digest['username']))
 		{
 			static::_force_login($uniqid);
-			return FALSE;
+			return false;
 		}
 
 		$valid_logins = \Config::get('rest.valid_logins');
@@ -376,10 +381,10 @@ abstract class Controller_Rest extends \Controller
 
 		if ($digest['response'] != $valid_response)
 		{
-			return FALSE;
+			return false;
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	protected function _force_login($nonce = '')

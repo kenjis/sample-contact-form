@@ -6,7 +6,7 @@
  * @version		1.0
  * @author		Fuel Development Team
  * @license		MIT License
- * @copyright	2010 - 2011 Fuel Development Team
+ * @copyright	2010 - 2012 Fuel Development Team
  * @link		http://fuelphp.com
  */
 
@@ -14,7 +14,6 @@ namespace Orm;
 
 class ManyMany extends Relation
 {
-
 	protected $key_from = array('id');
 
 	protected $key_to = array('id');
@@ -108,6 +107,15 @@ class ManyMany extends Relation
 		}
 
 		$query->_join($join);
+
+		if ($where = \Arr::get($this->conditions, 'where')) 
+		{
+			$query->where($where);
+		}
+		if ($order_by = \Arr::get($this->conditions, 'order_by'))
+		{
+			$query->order_by($order_by);
+		}
 
 		return $query->get();
 	}
@@ -305,14 +313,7 @@ class ManyMany extends Relation
 		$model_from->freeze();
 
 		// Delete all relationship entries for the model_from
-		$query = \DB::delete($this->table_through);
-		reset($this->key_from);
-		foreach ($this->key_through_from as $key)
-		{
-			$query->where($key, '=', $model_from->{current($this->key_from)});
-			next($this->key_from);
-		}
-		$query->execute(call_user_func(array($model_from, 'connection')));
+		$this->delete_related($model_from);
 
 		$cascade = is_null($cascade) ? $this->cascade_delete : (bool) $cascade;
 		if ($cascade and ! empty($model_to))
@@ -322,5 +323,18 @@ class ManyMany extends Relation
 				$m->delete();
 			}
 		}
+	}
+
+	public function delete_related($model_from)
+	{
+		// Delete all relationship entries for the model_from
+		$query = \DB::delete($this->table_through);
+		reset($this->key_from);
+		foreach ($this->key_through_from as $key)
+		{
+			$query->where($key, '=', $model_from->{current($this->key_from)});
+			next($this->key_from);
+		}
+		$query->execute(call_user_func(array($model_from, 'connection')));
 	}
 }

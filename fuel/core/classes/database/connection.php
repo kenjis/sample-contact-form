@@ -243,6 +243,22 @@ abstract class Database_Connection
 	}
 
 	/**
+	 * Per connection cache controlle setter/getter
+	 *
+	 * @param   bool   $bool  wether to enable it [optional]
+	 * @return  mixed  cache boolean when getting, current instance when setting.
+	 */
+	public function caching($bool = null)
+	{
+		if (is_bool($bool))
+		{
+			$this->_config['enable_cache'] = $bool;
+			return $this;
+		}
+		return \Arr::get($this->_config, 'enable_cache', true);
+	}
+
+	/**
 	 * Count the number of records in a table.
 	 *
 	 *     // Get the total number of records in the "users" table
@@ -609,6 +625,11 @@ abstract class Database_Connection
 			// Quote the column in FUNC("ident") identifiers
 			return preg_replace('/"(.+?)"/e', '$this->quote_identifier("$1")', $value);
 		}
+		elseif (preg_match("/^'(.*)?'$/", $value))
+		{
+			// return quoted values as-is
+			return $value;
+		}
 		elseif (strpos($value, '.') !== false)
 		{
 			// Split the identifier into the individual parts
@@ -652,17 +673,6 @@ abstract class Database_Connection
 	abstract public function in_transaction();
 
 	/**
-	 * Deprecated, does nothing now.
-	 *
-	 * @return void
-	 * @deprecated  remove in v1.2
-	 */
-	public function transactional()
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated, it does nothing anymore.', __METHOD__);
-	}
-
-	/**
 	 * Begins a transaction on instance
 	 *
 	 *     $db->start_transaction();
@@ -698,6 +708,8 @@ abstract class Database_Connection
 	 */
 	public function connection()
 	{
+		// Make sure the database is connected
+		$this->_connection or $this->connect();
 		return $this->_connection;
 	}
 }

@@ -70,6 +70,11 @@ class Asset_Instance
 	protected $_auto_render = true;
 
 	/**
+	 * @var  bool  if true the 'not found' exception will not be thrown and the asset is ignored.
+	 */
+	protected $_fail_silently = false;
+
+	/**
 	 * Parse the config and initialize the object instance
 	 *
 	 * @return  void
@@ -102,6 +107,7 @@ class Asset_Instance
 		$this->_asset_url = $config['url'];
 		$this->_indent = str_repeat($config['indent_with'], $config['indent_level']);
 		$this->_auto_render = $config['auto_render'];
+		$this->_fail_silently = $config['fail_silently'];
 	}
 
 	/**
@@ -121,12 +127,12 @@ class Asset_Instance
 			foreach ($type as $key => $folder)
 			{
 				is_numeric($key) and $key = $folder;
-				array_unshift($this->_asset_paths[$key], str_replace('../', '', rtrim($path, '/')).'/'.rtrim($folder, '/').'/');
+				array_unshift($this->_asset_paths[$key], str_replace('..'.DS, '', rtrim($path, DS)).DS.rtrim($folder, DS).DS);
 			}
 		}
 		else
 		{
-			array_unshift($this->_asset_paths[$type], str_replace('../', '', rtrim($path, '/')).'/');
+			array_unshift($this->_asset_paths[$type], str_replace('..'.DS, '', rtrim($path, DS)).DS);
 		}
 
 		return $this;
@@ -148,7 +154,7 @@ class Asset_Instance
 			foreach ($type as $key => $folder)
 			{
 				is_numeric($key) and $key = $folder;
-				if (($found = array_search(str_replace('../', '', rtrim($path,'/').$folder.'/'), $this->_asset_paths[$key])) !== false)
+				if (($found = array_search(str_replace('..'.DS, '', rtrim($path,DS).DS.rtrim($folder, DS).DS), $this->_asset_paths[$key])) !== false)
 				{
 					unset($this->_asset_paths[$key][$found]);
 				}
@@ -156,7 +162,7 @@ class Asset_Instance
 		}
 		else
 		{
-			if (($key = array_search(str_replace('../', '', rtrim($path,'/')), $this->_asset_paths[$type])) !== false)
+			if (($key = array_search(str_replace('..'.DS, '', rtrim($path,DS)), $this->_asset_paths[$type])) !== false)
 			{
 				unset($this->_asset_paths[$type][$key]);
 			}
@@ -203,6 +209,11 @@ class Asset_Instance
 				{
 					if ( ! ($file = $this->find_file($filename, $type)))
 					{
+						if ($this->_fail_silently)
+						{
+							continue;
+						}
+
 						throw new \FuelException('Could not find asset: '.$filename);
 					}
 
@@ -385,14 +396,15 @@ class Asset_Instance
 	{
 		foreach ($this->_asset_paths[$type] as $path)
 		{
-			empty($folder) or $folder = trim($folder, '/').'/';
+			empty($folder) or $folder = trim($folder, DS).DS;
 
-			if (is_file($path.$folder.ltrim($file, '/')))
+			if (is_file($path.$folder.ltrim($file, DS)))
 			{
-				$file = $path.$folder.ltrim($file, '/');
+				$file = $path.$folder.ltrim($file, DS);
 				strpos($file, DOCROOT) === 0 and $file = substr($file, strlen(DOCROOT));
 
-				return $file;
+				// return the file found, make sure it uses forward slashes on Windows
+				return str_replace(DS, '/', $file);
 			}
 		}
 
@@ -444,6 +456,12 @@ class Asset_Instance
 
 		foreach ($assets as $key => $asset)
 		{
+			// Prevent duplicate files in a group.
+			if (\Arr::get($this->_groups, "$group.$key.file") == $asset)
+			{
+				continue;
+			}
+
 			$this->_groups[$group][] = array(
 				'type'	=>	$type,
 				'file'	=>	$asset,

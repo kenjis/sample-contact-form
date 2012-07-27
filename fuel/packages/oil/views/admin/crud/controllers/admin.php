@@ -13,10 +13,10 @@ class Controller_Admin extends Controller_Base {
 			Response::redirect('admin/login');
 		}
 	}
-	
+
 	public function action_login()
 	{
-		if (Auth::check()) 
+		if (Auth::check())
 		{
 			Response::redirect('admin');
 		}
@@ -33,12 +33,13 @@ class Controller_Admin extends Controller_Base {
 			if ($val->run())
 			{
 				$auth = Auth::instance();
-				
+
 				// check the credentials. This assumes that you have the previous table created
 				if (Auth::check() or $auth->login(Input::post('email'), Input::post('password')))
 				{
 					// credentials ok, go right in
-					Session::set_flash('notice', 'Welcome, '.$current_user->username);
+					$current_user = Model_User::find_by_username(Auth::get_screen_name());
+					Session::set_flash('success', e('Welcome, '.$current_user->username));
 					Response::redirect('admin');
 				}
 				else
@@ -49,31 +50,31 @@ class Controller_Admin extends Controller_Base {
 		}
 
 		$this->template->title = 'Login';
-		$this->template->content = View::forge('admin/login', array('val' => $val));
+		$this->template->content = View::forge('admin/login', array('val' => $val), false);
 	}
-	
+
 	/**
 	 * The logout action.
-	 * 
+	 *
 	 * @access  public
 	 * @return  void
 	 */
 	public function action_logout()
-	{		
+	{
 		Auth::logout();
 		Response::redirect('admin');
 	}
 
 	/**
 	 * The index action.
-	 * 
+	 *
 	 * @access  public
 	 * @return  void
 	 */
 	public function action_index()
-	{		
+	{
 		$this->template->title = 'Dashboard';
-		$this->template->content = View::factory('admin/dashboard');
+		$this->template->content = View::forge('admin/dashboard');
 	}
 
 }

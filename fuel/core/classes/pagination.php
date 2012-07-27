@@ -40,22 +40,24 @@ class Pagination
 	 * @var array The HTML for the display
 	 */
 	public static $template = array(
-		'wrapper_start'  	  => '<div class="pagination"> ',
-		'wrapper_end'    	  => ' </div>',
-		'page_start'     	  => '<span class="page-links"> ',
-		'page_end'       	  => ' </span>',
-		'previous_start' 	  => '<span class="previous"> ',
-		'previous_end'   	  => ' </span>',
+		'wrapper_start'           => '<div class="pagination"> ',
+		'wrapper_end'             => ' </div>',
+		'page_start'              => '<span class="page-links"> ',
+		'page_end'                => ' </span>',
+		'previous_start'          => '<span class="previous"> ',
+		'previous_end'            => ' </span>',
 		'previous_inactive_start' => ' <span class="previous-inactive">',
 		'previous_inactive_end'   => ' </span>',
-		'previous_mark'  	  => '&laquo; ',
-		'next_start'     	  => '<span class="next"> ',
-		'next_end'       	  => ' </span>',
+		'previous_mark'           => '&laquo; ',
+		'next_start'              => '<span class="next"> ',
+		'next_end'                => ' </span>',
 		'next_inactive_start'     => ' <span class="next-inactive">',
 		'next_inactive_end'       => ' </span>',
-		'next_mark'      	  => ' &raquo;',
-		'active_start'   	  => '<span class="active"> ',
-		'active_end'     	  => ' </span>',
+		'next_mark'               => ' &raquo;',
+		'active_start'            => '<span class="active"> ',
+		'active_end'              => ' </span>',
+		'regular_start'           => '',
+		'regular_end'             => '',
 	);
 
 	/**
@@ -88,6 +90,7 @@ class Pagination
 	 */
 	public static function _init()
 	{
+		\Config::load('pagination', true);
 		$config = \Config::get('pagination', array());
 
 		static::set_config($config);
@@ -133,7 +136,7 @@ class Pagination
 	{
 		static::$total_pages = ceil(static::$total_items / static::$per_page) ?: 1;
 
-		static::$current_page = (int) \URI::segment(static::$uri_segment);
+		static::$current_page = (static::$total_items > 0 && static::$current_page > 1) ? static::$current_page : (int) \URI::segment(static::$uri_segment);
 
 		if (static::$current_page > static::$total_pages)
 		{
@@ -206,7 +209,7 @@ class Pagination
 			else
 			{
 				$url = ($i == 1) ? '' : '/'.$i;
-				$pagination .= \Html::anchor(rtrim(static::$pagination_url, '/').$url, $i);
+				$pagination .= static::$template['regular_start'].\Html::anchor(rtrim(static::$pagination_url, '/').$url, $i).static::$template['regular_end'];
 			}
 		}
 

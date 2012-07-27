@@ -38,23 +38,18 @@ class File
 	{
 		\Config::load('file', true);
 
+		// make sure the configured chmod values are octal
+		$chmod = \Config::get('file.chmod.folders', 0777);
+		is_string($chmod) and \Config::set('file.chmod.folders', octdec($chmod));
+		$chmod = \Config::get('file.chmod.files', 0666);
+		is_string($chmod) and \Config::set('file.chmod.files', octdec($chmod));
+
 		static::$areas[null] = \File_Area::forge(\Config::get('file.base_config', array()));
 
 		foreach (\Config::get('file.areas', array()) as $name => $config)
 		{
 			static::$areas[$name] = \File_Area::forge($config);
 		}
-	}
-
-	/**
-	 * This method is deprecated...use forge() instead.
-	 *
-	 * @deprecated until 1.2
-	 */
-	public static function factory(array $config = array())
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a forge() instead.', __METHOD__);
-		return static::forge($config);
 	}
 
 	public static function forge(array $config = array())
@@ -143,7 +138,7 @@ class File
 	{
 		$basepath	= rtrim(static::instance($area)->get_path($basepath), '\\/').DS;
 		$new_dir	= static::instance($area)->get_path($basepath.$name);
-		is_null($chmod) and $chmod = octdec(\Config::get('file.chmod.folders', 0777));
+		is_null($chmod) and $chmod = \Config::get('file.chmod.folders', 0777);
 
 		if ( ! is_dir($basepath) or ! is_writable($basepath))
 		{
@@ -236,8 +231,23 @@ class File
 				$continue = false;  // whether or not to continue
 				$matched  = false;  // whether any positive pattern matched
 				$positive = false;  // whether positive filters are present
-				foreach($filter as $f)
+				foreach($filter as $f => $type)
 				{
+					if (is_numeric($f))
+					{
+						// generic rule
+						$f = $type;
+					}
+					else
+					{
+						// type specific rule
+						$is_file = is_file($path.$file);
+						if (($type === 'file' and ! $is_file) or ($type !== 'file' and $is_file))
+						{
+							continue;
+						}
+					}
+
 					$not = substr($f, 0, 1) == '!';  // whether it's a negative condition
 					$f = $not ? substr($f, 1) : $f;
 					// on negative condition a match leads to a continue
@@ -545,7 +555,7 @@ class File
 	{
 		$path = rtrim(static::instance($area)->get_path($path), '\\/');
 
-		if ( ! is_file($path))
+		if ( ! is_file($path) and ! is_link($path))
 		{
 			throw new \InvalidPathException('Cannot delete file: given path "'.$path.'" is not a file.');
 		}
@@ -732,8 +742,9 @@ class File
 	 * @param  string|null  custom name for the file to be downloaded
 	 * @param  string|null  custom mime type or null for file mime type
 	 * @param  string|File_Area|null  file area name, object or null for base area
+	 * @param  bool        if false, return instead of exit
 	 */
-	public static function download($path, $name = null, $mime = null, $area = null)
+	public static function download($path, $name = null, $mime = null, $area = null, $exit = true)
 	{
 		$info = static::file_info($path, $area);
 
@@ -768,7 +779,11 @@ class File
 
 		static::close_file($file, $area);
 
-		exit;
+		if ($exit)
+		{
+			\Event::shutdown();
+			exit;
+		}
 	}
 
 }

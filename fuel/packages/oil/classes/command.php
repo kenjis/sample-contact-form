@@ -23,12 +23,6 @@ class Command
 {
 	public static function init($args)
 	{
-		//set up the environment
-		if (($env = \Cli::option('env')))
-		{
-			\Fuel::$env = constant('\Fuel::'. strtoupper($env)) ?: \Fuel::DEVELOPMENT;
-		}
-		
 		// Remove flag options from the main argument list
 		$args = self::_clear_args($args);
 
@@ -90,13 +84,31 @@ class Command
 				case 'console':
 					new Console;
 
+				case 'p':
+				case 'package':
+
+					$action = isset($args[2]) ? $args[2]: 'help';
+
+					switch ($action)
+					{
+						case 'install':
+						case 'uninstall':
+							call_user_func_array('Oil\Package::'.$action, array_slice($args, 3));
+						break;
+
+						default:
+							Package::help();
+					}
+
+				break;
+
 				case 'r':
 				case 'refine':
 
 					// Developers of third-party tasks may not be displaying PHP errors. Report any error and quit
 					set_error_handler(function($errno, $errstr, $errfile, $errline) {
 						if (!error_reporting()) return; // If the error was supressed with an @ then we ignore it!
-						
+
 						\Cli::error("Error: {$errstr} in $errfile on $errline");
 						\Cli::beep();
 						exit;
@@ -149,8 +161,18 @@ class Command
 						throw new Exception('PHPUnit does not appear to be installed.'.PHP_EOL.PHP_EOL."\tPlease visit http://phpunit.de and install.");
 					}
 
-					// CD to the root of Fuel and call up phpunit with a path to our config
-					$command = 'cd '.DOCROOT.'; phpunit -c "'.COREPATH.'phpunit.xml"';
+					// Check for a custom phpunit config, but default to the one from core
+					if (file_exists(APPPATH.'phpunit.xml'))
+					{
+						$phpunit_config = APPPATH.'phpunit.xml';
+					}
+					else
+					{
+						$phpunit_config = COREPATH.'phpunit.xml';
+					}
+
+					// CD to the root of Fuel and call up phpunit with the path to our config
+					$command = 'cd '.DOCROOT.'; phpunit -c "'.$phpunit_config.'"';
 
 					// Respect the group option
 					\Cli::option('group') and $command .= ' --group '.\Cli::option('group');
@@ -187,18 +209,21 @@ class Command
 		echo <<<HELP
 
 Usage:
-  php oil [cell|console|generate|refine|help|test]
+  php oil [cell|console|generate|package|refine|help|test]
 
 Runtime options:
   -f, [--force]    # Overwrite files that already exist
   -s, [--skip]     # Skip files that already exist
   -q, [--quiet]    # Supress status output
   -t, [--speak]    # Speak errors in a robot voice
-  --env            # Specify the fuel environment
 
 Description:
   The 'oil' command can be used in several ways to facilitate quick development, help with
   testing your application and for running Tasks.
+
+Environment:
+  If you want to specify a specific environment oil has to run in, overload the environment
+  variable on the commandline: FUEL_ENV=staging php oil <commands>
 
 Documentation:
   http://docs.fuelphp.com/packages/oil/intro.html

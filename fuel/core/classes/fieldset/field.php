@@ -50,6 +50,11 @@ class Fieldset_Field
 	protected $value;
 
 	/**
+	 * @var  string  Description text to show with the field
+	 */
+	protected $description = '';
+
+	/**
 	 * @var  array  Rules for validation
 	 */
 	protected $rules = array();
@@ -68,6 +73,11 @@ class Fieldset_Field
 	 * @var  string  Template for form building
 	 */
 	protected $template;
+
+	/**
+	 * @var  array  overwrites for default error messages
+	 */
+	protected $error_messages = array();
 
 	/**
 	 * Constructor
@@ -89,27 +99,27 @@ class Fieldset_Field
 		// Take rules out of attributes
 		unset($attributes['rules']);
 
-		// Set certain types through specific setter
-		foreach (array('label', 'type', 'value', 'options') as $prop)
+		// Use specific setter when available
+		foreach ($attributes as $attr => $val)
 		{
-			if (array_key_exists($prop, $attributes))
+			if (method_exists($this, $method = 'set_'.$attr))
 			{
-				$this->{'set_'.$prop}($attributes[$prop]);
-				unset($attributes[$prop]);
+				$this->{$method}($val);
+				unset($attributes[$attr]);
 			}
 		}
 
 		// Add default "type" attribute if not specified
-		if (empty($attributes['type'])) $this->set_type($this->type);
+		empty($attributes['type']) and $this->set_type($this->type);
 
 		// only when non-empty, will supersede what was given in $attributes
-		$label && $this->set_label($label);
+		$label and $this->set_label($label);
 
 		$this->attributes = array_merge($this->attributes, $attributes);
 
 		foreach ($rules as $rule)
 		{
-			call_user_func_array(array($this, 'add_rule'), $rule);
+			call_user_func_array(array($this, 'add_rule'), (array) $rule);
 		}
 	}
 
@@ -188,6 +198,19 @@ class Fieldset_Field
 	}
 
 	/**
+	 * Change the field description
+	 *
+	 * @param   string
+	 * @return  Fieldset_Field  this, to allow chaining
+	 */
+	public function set_description($description)
+	{
+		$this->description = strval($description);
+
+		return $this;
+	}
+
+	/**
 	 * Template the output
 	 *
 	 * @param   string
@@ -198,6 +221,41 @@ class Fieldset_Field
 		$this->template = $template;
 
 		return $this;
+	}
+
+	/**
+	 * Overwrite a default error message
+	 *
+	 * @param   string  $rule
+	 * @param   string  $msg
+	 * @return  Fieldset_Field
+	 */
+	public function set_error_message($rule, $msg)
+	{
+		empty($rule) and $rule = 0;
+		$this->error_messages[$rule] = strval($msg);
+
+		return $this;
+	}
+
+	/**
+	 * Check if a rule has an error message overwrite
+	 *
+	 * @param   string  $rule
+	 * @return  null|string
+	 */
+	public function get_error_message($rule)
+	{
+		if (isset($this->error_messages[$rule]))
+		{
+			return $this->error_messages[$rule];
+		}
+		elseif (isset($this->error_messages[0]))
+		{
+			return $this->error_messages[0];
+		}
+
+		return null;
 	}
 
 	/**
@@ -292,7 +350,7 @@ class Fieldset_Field
 		{
 			foreach ($new as $k => $v)
 			{
-				if (is_array($array[$k]) and is_array($v))
+				if (isset($array[$k]) and is_array($array[$k]) and is_array($v))
 				{
 					$merge($array[$k], $v);
 				}
@@ -388,11 +446,12 @@ class Fieldset_Field
 		// Add IDs when auto-id is on
 		if ($form->get_config('auto_id', false) === true and $this->get_attribute('id') == '')
 		{
-			$auto_id = str_replace(array('[', ']'), array('-', ''), $this->name);
+			$auto_id = $form->get_config('auto_id_prefix', '')
+				.str_replace(array('[', ']'), array('-', ''), $this->name);
 			$this->set_attribute('id', $auto_id);
 		}
 
-		switch($this->type)
+		switch( ! empty($this->attributes['tag']) ? $this->attributes['tag'] : $this->type)
 		{
 			case 'hidden':
 				$build_field = $form->hidden($this->name, $this->value, $this->attributes);
@@ -475,11 +534,10 @@ class Fieldset_Field
 		$form = $this->fieldset()->form();
 
 		$required_mark = $this->get_attribute('required', null) ? $form->get_config('required_mark', null) : null;
-		$label = $this->label ? $form->label($this->label, $this->get_attribute('id', null)) : '';
-		$error_template = $form->get_config('error_template', "");
+		$label = $this->label ? $form->label($this->label, null, array('for' => $this->get_attribute('id', null))) : '';
+		$error_template = $form->get_config('error_template', '');
 		$error_msg = ($form->get_config('inline_errors') && $this->error()) ? str_replace('{error_msg}', $this->error(), $error_template) : '';
 		$error_class = $this->error() ? $form->get_config('error_class') : '';
-		$help_text = ($help_text = $this->get_attribute('help_text', '')) != '' ? str_replace('{help_text}', $help_text, $form->get_config('help_text', '')) : '';
 
 		if (is_array($build_field))
 		{
@@ -497,7 +555,7 @@ class Fieldset_Field
 				}
 
 				$template = str_replace($match[0], '{fields}', $template);
-				$template = str_replace(array('{group_label}', '{required}', '{fields}', '{error_msg}', '{error_class}', '{help_text}'), array($label, $required_mark, $build_fields, $error_msg, $error_class, $help_text), $template);
+				$template = str_replace(array('{group_label}', '{required}', '{fields}', '{error_msg}', '{error_class}', '{description}'), array($label, $required_mark, $build_fields, $error_msg, $error_class, $this->description), $template);
 
 				return $template;
 			}
@@ -506,9 +564,9 @@ class Fieldset_Field
 			$build_field = implode(' ', $build_field);
 		}
 
-		$template = $this->template ?: $form->get_config('field_template', "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{field} {help_text} {error_msg}</td>\n\t\t</tr>\n");
-		$template = str_replace(array('{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{help_text}'),
-			array($label, $required_mark, $build_field, $error_msg, $error_class, $help_text),
+		$template = $this->template ?: $form->get_config('field_template', "\t\t<tr>\n\t\t\t<td class=\"{error_class}\">{label}{required}</td>\n\t\t\t<td class=\"{error_class}\">{field} {description} {error_msg}</td>\n\t\t</tr>\n");
+		$template = str_replace(array('{label}', '{required}', '{field}', '{error_msg}', '{error_class}', '{description}'),
+			array($label, $required_mark, $build_field, $error_msg, $error_class, $this->description),
 			$template);
 		return $template;
 	}

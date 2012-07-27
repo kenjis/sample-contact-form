@@ -213,15 +213,18 @@ class Form_Instance
 		if ($this->get_config('prep_value', true) && empty($attributes['dont_prep']))
 		{
 			$attributes['value'] = $this->prep_value($attributes['value']);
-			unset($attributes['dont_prep']);
 		}
+		unset($attributes['dont_prep']);
 
 		if (empty($attributes['id']) && $this->get_config('auto_id', false) == true)
 		{
 			$attributes['id'] = $this->get_config('auto_id_prefix', 'form_').$attributes['name'];
 		}
 
-		return html_tag('input', $this->attr_to_string($attributes));
+		$tag = ! empty($attributes['tag']) ? $attributes['tag'] : 'input';
+		unset($attributes['tag']);
+
+		return html_tag($tag, $this->attr_to_string($attributes));
 	}
 
 	/**
@@ -277,10 +280,11 @@ class Form_Instance
 	 *
 	 * @param   string|array  either fieldname or full attributes array (when array other params are ignored)
 	 * @param   string
+	 * @param   mixed         either attributes (array) or bool/string to set checked status
 	 * @param   array
 	 * @return  string
 	 */
-	public function radio($field, $value = null, array $attributes = array())
+	public function radio($field, $value = null, $checked = null, array $attributes = array())
 	{
 		if (is_array($field))
 		{
@@ -288,8 +292,25 @@ class Form_Instance
 		}
 		else
 		{
+			is_array($checked) and $attributes = $checked;
 			$attributes['name'] = (string) $field;
 			$attributes['value'] = (string) $value;
+
+			# Added for 1.2 to allow checked true/false. in 3rd argument, used to be attributes
+			if ( ! is_array($checked))
+			{
+				// If it's true, then go for it
+				if (is_bool($checked) and $checked === true)
+				{
+					$attributes['checked'] = 'checked';
+				}
+
+				// Otherwise, if the string/number/whatever matches then do it
+				elseif (is_scalar($checked) and $checked == $value)
+				{
+					$attributes['checked'] = 'checked';
+				}
+			}
 		}
 		$attributes['type'] = 'radio';
 
@@ -301,10 +322,11 @@ class Form_Instance
 	 *
 	 * @param   string|array  either fieldname or full attributes array (when array other params are ignored)
 	 * @param   string
+	 * @param   mixed         either attributes (array) or bool/string to set checked status
 	 * @param   array
 	 * @return  string
 	 */
-	public function checkbox($field, $value = null, array $attributes = array())
+	public function checkbox($field, $value = null, $checked = null, array $attributes = array())
 	{
 		if (is_array($field))
 		{
@@ -312,8 +334,25 @@ class Form_Instance
 		}
 		else
 		{
+			is_array($checked) and $attributes = $checked;
 			$attributes['name'] = (string) $field;
 			$attributes['value'] = (string) $value;
+
+			# Added for 1.2 to allow checked true/false. in 3rd argument, used to be attributes
+			if ( ! is_array($checked))
+			{
+				// If it's true, then go for it
+				if (is_bool($checked) and $checked === true)
+				{
+					$attributes['checked'] = 'checked';
+				}
+
+				// Otherwise, if the string/number/whatever matches then do it
+				elseif (is_scalar($checked) and $checked == $value)
+				{
+					$attributes['checked'] = 'checked';
+				}
+			}
 		}
 		$attributes['type'] = 'checkbox';
 
@@ -440,8 +479,8 @@ class Form_Instance
 		if ($this->get_config('prep_value', true) && empty($attributes['dont_prep']))
 		{
 			$value = $this->prep_value($value);
-			unset($attributes['dont_prep']);
 		}
+		unset($attributes['dont_prep']);
 
 		if (empty($attributes['id']) && $this->get_config('auto_id', false) == true)
 		{
@@ -499,7 +538,7 @@ class Form_Instance
 		$current_obj =& $this;
 
 		// closure to recusively process the options array
-		$listoptions = function (array $options, $selected, $level = 1) use (&$listoptions, &$current_obj)
+		$listoptions = function (array $options, $selected, $level = 1) use (&$listoptions, &$current_obj, &$attributes)
 		{
 			$input = PHP_EOL;
 			foreach ($options as $key => $val)
@@ -513,13 +552,16 @@ class Form_Instance
 				else
 				{
 					$opt_attr = array('value' => $key, 'style' => 'text-indent: '.(10*($level-1)).'px;');
-					(in_array((string)$key, $selected, TRUE)) && $opt_attr[] = 'selected';
+					(in_array((string)$key, $selected, true)) && $opt_attr[] = 'selected';
 					$input .= str_repeat("\t", $level);
 					$opt_attr['value'] = ($current_obj->get_config('prep_value', true) && empty($attributes['dont_prep'])) ?
 						$current_obj->prep_value($opt_attr['value']) : $opt_attr['value'];
+					$val = ($current_obj->get_config('prep_value', true) && empty($attributes['dont_prep'])) ?
+						$current_obj->prep_value($val) : $val;
 					$input .= html_tag('option', $opt_attr, $val).PHP_EOL;
 				}
 			}
+			unset($attributes['dont_prep']);
 
 			return $input;
 		};
@@ -552,7 +594,7 @@ class Form_Instance
 			isset($attributes['id']) and $id = $attributes['id'];
 		}
 
-		if (empty($attributes['for']) && $this->get_config('auto_id', false) == true)
+		if (empty($attributes['for']) and $this->get_config('auto_id', false) == true)
 		{
 			$attributes['for'] = $this->get_config('auto_id_prefix', 'form_').$id;
 		}
@@ -573,8 +615,7 @@ class Form_Instance
 	 */
 	public function prep_value($value)
 	{
-		$value = htmlspecialchars($value);
-		$value = str_replace(array("'", '"'), array("&#39;", "&quot;"), $value);
+		$value = \Security::htmlentities($value, ENT_QUOTES);
 
 		return $value;
 	}
