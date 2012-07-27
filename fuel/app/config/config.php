@@ -41,7 +41,7 @@ return array(
 	 *
 	 * Set this to false or remove if you using mod_rewrite.
 	 */
-	'index_file'  => '',
+	'index_file'  => false,
 
 	'profiling'  => false,
 
@@ -81,7 +81,7 @@ return array(
 	 * server_gmt_offset	in seconds the server offset from gmt timestamp when time() is used
 	 * default_timezone		optional, if you want to change the server's default timezone
 	 */
-	'server_gmt_offset'  => 9 * 3600,
+	'server_gmt_offset'  => 0,
 	'default_timezone'   => 'Asia/Tokyo',
 
 	/**
@@ -114,8 +114,9 @@ return array(
 		 * dependant on how much input data there is.
 		 */
 		'input_filter'  => array(
-			'MySecurity::check_encoding',
-			'MySecurity::check_controll',
+			'MyInputFilters::check_encoding',
+			'MyInputFilters::check_control',
+			'MyInputFilters::standardize_newline',
 		),
 
 		/**
@@ -124,7 +125,7 @@ return array(
 		 * WARNING: Using xss_clean will cause a performance hit.  How much is
 		 * dependant on how much input data there is.
 		 */
-		'output_filter'  => array('MySecurity::htmlspecialchars'),
+		'output_filter'  => array('Security::htmlentities'),
 
 		/**
 		 * Whether to automatically filter view data

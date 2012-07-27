@@ -62,11 +62,25 @@ END;
 
 			$c->sendmail($data);
 			
-			$this->assertRegExp('/管理者 <kenji.uui@gmail.com>/u', self::$mail_data['to']);
-			$this->assertRegExp('/コンタクトフォーム/u', self::$mail_data['subject']);
-			$this->assertRegExp('/sendmail\(\)メソッドのテスト/u', self::$mail_data['message']);
-			$this->assertRegExp('/From: 送信者の名前 <foo@example.jp>/u', self::$mail_data['additional_headers']);
-			$this->assertRegExp('/-oi -f foo@example.jp/u', self::$mail_data['additional_parameters']);
+			$test = static::$mail_data['to'];
+			$pattern = '/' . preg_quote('=?UTF-8?B?566h55CG6ICF?= <kenji.uui@gmail.com>', '/') . '/u';
+			$this->assertRegExp($pattern, $test);
+			
+			$test = static::$mail_data['subject'];
+			$pattern = '/' . preg_quote('=?UTF-8?B?44Kz44Oz44K/44Kv44OI44OV44Kp44O844Og?=', '/') . '/u';
+			$this->assertRegExp($pattern, $test);
+			
+			$test = static::$mail_data['message'];
+			$pattern = '/' . preg_quote('sendmail()メソッドのテスト', '/') . '/u';
+			$this->assertRegExp($pattern, $test);
+			
+			$test = static::$mail_data['additional_headers'];
+			$pattern = '/' . preg_quote('From: =?UTF-8?B?6YCB5L+h6ICF44Gu5ZCN5YmN?= <foo@example.jp>', '/') . '/u';
+			$this->assertRegExp($pattern, $test);
+			
+			$test = static::$mail_data['additional_parameters'];
+			$pattern = '/' . preg_quote('-oi -f foo@example.jp', '/') . '/u';
+			$this->assertRegExp($pattern, $test);
 		}
 	}
 }

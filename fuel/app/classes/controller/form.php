@@ -30,17 +30,17 @@ class Controller_Form extends Controller_Template
 		$form->add('name', '名前')
 			->add_rule('trim')
 			->add_rule('required')
-			->add_rule('no_controll')
+			->add_rule('no_tab_and_newline')
 			->add_rule('max_length', 20);
 
 		$form->add('email', 'メールアドレス')
 			->add_rule('trim')
 			->add_rule('required')
-			->add_rule('no_controll')
+			->add_rule('no_tab_and_newline')
 			->add_rule('valid_email');
 
 		$form->add('comment', 'コメント', 
-					array('type' => 'textarea', 'cols' => 70, 'rows' => 6))
+			array('type' => 'textarea', 'cols' => 70, 'rows' => 6))
 			->add_rule('required')
 			->add_rule('max_length', 400);
 
@@ -49,7 +49,7 @@ class Controller_Form extends Controller_Template
 			'女性' => '女性',
 		);
 		$form->add('gender', '性別', 
-					array('options' => $ops, 'type' => 'radio'))
+			array('options' => $ops, 'type' => 'radio'))
 			->add_rule('in_array', $ops);
 		
 		$ops = array(
@@ -59,7 +59,7 @@ class Controller_Form extends Controller_Template
 			'その他'                   => 'その他',
 		);
 		$form->add('kind', '問い合わせの種類', 
-					array('options' => $ops, 'type' => 'select'))
+			array('options' => $ops, 'type' => 'select'))
 			->add_rule('in_array', $ops);
 		
 		$ops = array(
@@ -68,7 +68,7 @@ class Controller_Form extends Controller_Template
 			'Python' => 'Python',
 		);
 		$form->add('lang', '使用プログラミング言語', 
-					array('options' => $ops, 'type' => 'checkbox'))
+			array('options' => $ops, 'type' => 'checkbox'))
 			->add_rule('in_array', $ops)
 			->add_rule('not_required_array');
 		
@@ -88,14 +88,14 @@ class Controller_Form extends Controller_Template
 		
 		$this->template->title = 'コンタクトフォーム';
 		$this->template->content = View::forge('form/index');
-		$this->template->content->set_safe('html_form', $form->build('/form/confirm'));
+		$this->template->content->set_safe('html_form', $form->build('form/confirm'));
 	}
 	
 	public function action_confirm()
 	{
 		$form = $this->form();
 		$val  = $form->validation();
-		$val->add_callable('myvalidation');
+		$val->add_callable('myvalidationrules');
 		
 		if ($val->run())
 		{
@@ -110,7 +110,7 @@ class Controller_Form extends Controller_Template
 			$this->template->title = 'コンタクトフォーム: エラー';
 			$this->template->content = View::forge('form/index');
 			$this->template->content->set_safe('html_error', $val->show_errors());
-			$this->template->content->set_safe('html_form', $form->build('/form/confirm'));
+			$this->template->content->set_safe('html_form', $form->build('form/confirm'));
 		}
 	}
 
@@ -128,7 +128,7 @@ class Controller_Form extends Controller_Template
 		}
 		
 		$val = $this->form()->validation();
-		$val->add_callable('myvalidation');
+		$val->add_callable('myvalidationrules');
 		
 		if ($val->run())
 		{
@@ -219,5 +219,4 @@ END;
 		
 		$email->send();
 	}
-
 }

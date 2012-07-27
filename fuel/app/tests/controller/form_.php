@@ -43,15 +43,20 @@ class Tests_Controller_Form_ extends \TestCase
 			'email'   => '',
 			'comment' => '<s>comment</s>"&\''
 		);
-
+		
 		$url = self::BASE_URL . 'confirm';
 		self::$curl->set_url($url);
 		self::$curl->set_post_data($post);
 		$output = self::$curl->post();
-
-		$this->assertRegExp('!<input type="text" required="required" value="&lt;s&gt;name&lt;/s&gt;&quot;&amp;&#39;" id="name" name="name" />!u', $output);
-		$this->assertRegExp('!<textarea cols="70" rows="6" required="required" id="comment" name="comment">&lt;s&gt;comment&lt;/s&gt;&quot;&amp;&#39;</textarea>!u', $output);
-		$this->assertRegExp('/メールアドレス 欄は必須です。/u', $output);
+		
+		$pattern = '/' . preg_quote('<input type="text" required="required" value="&lt;s&gt;name&lt;/s&gt;&quot;&amp;&#039;" id="form_name" name="name" />', '/') . '/u';
+		$this->assertRegExp($pattern, $output);
+		
+		$pattern = '/' . preg_quote('<textarea cols="70" rows="6" required="required" id="form_comment" name="comment">&lt;s&gt;comment&lt;/s&gt;&quot;&amp;&#039;</textarea>', '/') . '/u';
+		$this->assertRegExp($pattern, $output);
+		
+		$pattern = '/' . preg_quote('メールアドレス 欄は必須です。', '/') . '/u';
+		$this->assertRegExp($pattern, $output);
 	}
 	
 	public function test_action_confirm_error_mail_header_injection()
@@ -61,13 +66,14 @@ class Tests_Controller_Form_ extends \TestCase
 			'email'   => "username@example.jp\nBcc: foo@example.com",
 			'comment' => '<s>comment</s>"&\'',
 		);
-
+		
 		$url = self::BASE_URL . 'confirm';
 		self::$curl->set_url($url);
 		self::$curl->set_post_data($post);
 		$output = self::$curl->post();
-
-		$this->assertRegExp('!Invalid input data!u', $output);
+		
+		$pattern = '/' . preg_quote('メールアドレス 欄にタブまたは改行コードが含まれています。', '/') . '/u';
+		$this->assertRegExp($pattern, $output);
 	}
 	
 	public function test_action_confirm_passed()
