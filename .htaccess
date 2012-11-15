@@ -1,0 +1,8 @@
+# htaccess for AppFog
+
+RewriteEngine On
+RewriteBase /public
+RewriteRule (.*) /public/$1 [L]
+
+SetEnv FUEL_ENV production
+

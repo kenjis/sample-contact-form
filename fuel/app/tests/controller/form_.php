@@ -14,7 +14,7 @@
  */
 class Tests_Controller_Form_ extends \TestCase
 {
-	const BASE_URL = 'http://localhost/form/form/';
+	const BASE_URL = 'http://localhost/contact-form/form/';
 	protected static $curl;
 
 	public static function setUpBeforeClass()
