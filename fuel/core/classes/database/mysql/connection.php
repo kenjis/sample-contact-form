@@ -69,6 +69,7 @@ class Database_MySQL_Connection extends \Database_Connection
 			'username'   => '',
 			'password'   => '',
 			'persistent' => false,
+			'compress'	 => true,
 		));
 
 		// Prevent this information from showing up in traces
@@ -88,12 +89,26 @@ class Database_MySQL_Connection extends \Database_Connection
 			if ($persistent)
 			{
 				// Create a persistent connection
-				$this->_connection = mysql_pconnect($hostname, $username, $password);
+				if ($compress)
+				{
+					$this->_connection = mysql_pconnect($hostname, $username, $password, MYSQL_CLIENT_COMPRESS);
+				}
+				else
+				{
+					$this->_connection = mysql_pconnect($hostname, $username, $password);
+				}
 			}
 			else
 			{
 				// Create a connection and force it to be a new link
-				$this->_connection = mysql_connect($hostname, $username, $password, true);
+				if ($compress)
+				{
+					$this->_connection = mysql_connect($hostname, $username, $password, true, MYSQL_CLIENT_COMPRESS);
+				}
+				else
+				{
+					$this->_connection = mysql_connect($hostname, $username, $password, true);
+				}
 			}
 		}
 		catch (\ErrorException $e)
@@ -413,6 +428,12 @@ class Database_MySQL_Connection extends \Database_Connection
 
 		// SQL standard is to use single-quotes for all values
 		return "'$value'";
+	}
+
+	public function error_info()
+	{
+		$errno = mysql_errno($this->_connection);
+		return array($errno, empty($errno)? null : $errno, empty($errno) ? null : mysql_error($this->_connection));
 	}
 
 	public function in_transaction()

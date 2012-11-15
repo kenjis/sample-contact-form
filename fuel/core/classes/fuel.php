@@ -29,7 +29,7 @@ class Fuel
 	/**
 	 * @var  string  The version of Fuel
 	 */
-	const VERSION = '1.2.1';
+	const VERSION = '1.4';
 
 	/**
 	 * @var  string  constant used for when in testing mode
@@ -206,6 +206,9 @@ class Fuel
 
 		static::$initialized = true;
 
+		// fire any app created events
+		\Event::instance()->has_events('app_created') and \Event::instance()->trigger('app_created', '', 'none');
+
 		if (static::$profiling)
 		{
 			\Profiler::mark(__METHOD__.' End');
@@ -292,26 +295,6 @@ class Fuel
 	public static function load($file)
 	{
 		return include $file;
-	}
-
-	/**
-	 * @deprecated  Keep until v1.3
-	 */
-	public static function add_module($module)
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a Module::load() instead.', __METHOD__);
-
-		return \Module::load($module);
-	}
-
-	/**
-	 * @deprecated  Keep until v1.3
-	 */
-	public static function module_exists($module)
-	{
-		logger(\Fuel::L_WARNING, 'This method is deprecated.  Please use a Module::exists() instead.', __METHOD__);
-
-		return \Module::exists($module);
 	}
 
 	/**

@@ -36,9 +36,9 @@ abstract class Config_File implements Config_Interface
 	 * @param   bool  $overwrite  Whether to overwrite existing values
 	 * @return  array  the config array
 	 */
-	public function load($overwrite = false)
+	public function load($overwrite = false, $cache = true)
 	{
-		$paths = $this->find_file();
+		$paths = $this->find_file($cache);
 		$config = array();
 
 		foreach ($paths as $path)
@@ -115,25 +115,26 @@ abstract class Config_File implements Config_Interface
 	 * @param   bool  $multiple  Whether to load multiple files or not
 	 * @return  array
 	 */
-	protected function find_file()
+	protected function find_file($cache = true)
 	{
-		$paths = \Finder::search('config', $this->file, $this->ext, true);
-
-		// absolute path requested?
-		if ($this->file[0] === '/' or (isset($this->file[1]) and $this->file[1] === ':'))
+		if (($this->file[0] === '/' or (isset($this->file[1]) and $this->file[1] === ':')) and is_file($this->file))
 		{
-			// don't search further, load only the requested file
-			return $paths;
+			$paths = array($this->file);
+		}
+		else
+		{
+			$paths = array_merge(
+				\Finder::search('config/'.\Fuel::$env, $this->file, $this->ext, true, $cache),
+				\Finder::search('config', $this->file, $this->ext, true, $cache)
+			);
 		}
 
-		$paths = array_merge(\Finder::search('config/'.\Fuel::$env, $this->file, $this->ext, true), $paths);
-
-		if (count($paths) > 0)
+		if (empty($paths))
 		{
-			return array_reverse($paths);
+			throw new \ConfigException(sprintf('File "%s" does not exist.', $this->file));
 		}
 
-		throw new \ConfigException(sprintf('File "%s" does not exist.', $this->file));
+		return array_reverse($paths);
 	}
 
 	/**

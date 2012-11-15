@@ -32,7 +32,7 @@ class Command
 			{
 				if (\Cli::option('v', \Cli::option('version')))
 				{
-					\Cli::write('Fuel: '.\Fuel::VERSION);
+					\Cli::write('Fuel: '.\Fuel::VERSION.' running in "'.\Fuel::$env.'" mode');
 					return;
 				}
 
@@ -59,6 +59,7 @@ class Command
 						case 'controller':
 						case 'model':
 						case 'migration':
+						case 'task':
 							call_user_func('Oil\Generate::'.$action, array_slice($args, 3));
 						break;
 
@@ -111,7 +112,7 @@ class Command
 
 						\Cli::error("Error: {$errstr} in $errfile on $errline");
 						\Cli::beep();
-						exit;
+						exit(1);
 					});
 
 					$task = isset($args[2]) ? $args[2] : null;
@@ -174,19 +175,26 @@ class Command
 					// CD to the root of Fuel and call up phpunit with the path to our config
 					$command = 'cd '.DOCROOT.'; phpunit -c "'.$phpunit_config.'"';
 
-					// Respect the group option
+					// Respect the group options
 					\Cli::option('group') and $command .= ' --group '.\Cli::option('group');
+					\Cli::option('exclude-group') and $command .= ' --exclude-group '.\Cli::option('exclude-group');
 
 					// Respect the coverage-html option
 					\Cli::option('coverage-html') and $command .= ' --coverage-html '.\Cli::option('coverage-html');
+					\Cli::option('coverage-clover') and $command .= ' --coverage-clover '.\Cli::option('coverage-clover');
+					\Cli::option('coverage-text') and $command .= ' --coverage-text='.\Cli::option('coverage-text');
+					\Cli::option('coverage-php') and $command .= ' --coverage-php '.\Cli::option('coverage-php');
 
 					\Cli::write('Tests Running...This may take a few moments.', 'green');
 
+					$return_code = 0;
 					foreach(explode(';', $command) as $c)
 					{
-						passthru($c);
+						passthru($c, $return_code_task);
+						// Return failure if any subtask fails
+						$return_code |= $return_code_task;
 					}
-
+					exit($return_code);
 				break;
 
 				default:
@@ -201,6 +209,7 @@ class Command
 			\Cli::beep();
 
 			\Cli::option('speak') and `say --voice="Trinoids" "{$e->getMessage()}"`;
+			exit(1);
 		}
 	}
 

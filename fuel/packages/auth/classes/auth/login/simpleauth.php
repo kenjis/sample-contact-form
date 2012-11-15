@@ -206,7 +206,7 @@ class Auth_Login_SimpleAuth extends \Auth_Login_Driver
 
 		if (empty($username) or empty($password) or empty($email))
 		{
-			throw new \SimpleUserUpdateException('Username, password and email address can\'t be empty.', 1);
+			throw new \SimpleUserUpdateException('Username, password or email address is not given, or email address is invalid', 1);
 		}
 
 		$same_users = \DB::select_array(\Config::get('simpleauth.table_columns', array('*')))
@@ -233,6 +233,8 @@ class Auth_Login_SimpleAuth extends \Auth_Login_Driver
 			'email'           => $email,
 			'group'           => (int) $group,
 			'profile_fields'  => serialize($profile_fields),
+			'last_login'      => 0,
+			'login_hash'      => '',
 			'created_at'      => \Date::forge()->get_timestamp()
 		);
 		$result = \DB::insert(\Config::get('simpleauth.table_name'))
@@ -496,7 +498,7 @@ class Auth_Login_SimpleAuth extends \Auth_Login_Driver
 	 *
 	 * @return  Array
 	 */
-	public function get_profile_fields()
+	public function get_profile_fields($field = null, $default = null)
 	{
 		if (empty($this->user))
 		{
@@ -512,7 +514,7 @@ class Auth_Login_SimpleAuth extends \Auth_Login_Driver
 			$this->user['profile_fields'] = array();
 		}
 
-		return $this->user['profile_fields'];
+		return is_null($field) ? $this->user['profile_fields'] : \Arr::get($this->user['profile_fields'], $field, $default);
 	}
 
 	/**

@@ -12,7 +12,8 @@
 
 namespace Fuel\Core;
 
-class Model_Crud extends \Model implements \Iterator, \ArrayAccess {
+class Model_Crud extends \Model implements \Iterator, \ArrayAccess, \Serializable
+{
 
 	/**
 	 * @var  string  $_table_name  The table name (must set this in your Model)
@@ -112,7 +113,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess {
 
 		if ($result !== null)
 		{
-			return current($result);
+			return reset($result);
 		}
 
 		return null;
@@ -423,7 +424,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess {
 		// Set default if there are any
 		isset(static::$_defaults) and $vars = $vars + static::$_defaults;
 
-		if ($validate and isset(static::$_rules) and count(static::$_rules) > 0)
+		if ($validate and isset(static::$_rules) and ! empty(static::$_rules))
 		{
 			$vars = $this->pre_validate($vars);
 			$validated = $this->post_validate($this->run_validation($vars));
@@ -433,6 +434,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess {
 				$validated = array_filter($this->validation()->validated(), function($val){
 					return ($val !== null);
 				});
+
 				$vars = $validated + $vars;
 			}
 			else
@@ -442,12 +444,12 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess {
 		}
 
 		$vars = $this->prep_values($vars);
-		
+
 		if (isset(static::$_properties))
 		{
 			$vars = \Arr::filter_keys($vars, static::$_properties);
 		}
-		
+
 		if(isset(static::$_updated_at))
 		{
 			if(isset(static::$_mysql_timestamp) and static::$_mysql_timestamp === true)
@@ -488,7 +490,7 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess {
 					$result[0] = $vars[static::primary_key()];
 				}
 				$this->set($vars);
-				$this->{static::primary_key()} = $result[0];
+				empty($result[0]) or $this->{static::primary_key()} = $result[0];
 				$this->is_new(false);
 			}
 
@@ -566,7 +568,19 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess {
 	 */
 	public function validation()
 	{
-		$this->_validation or $this->_validation = \Validation::forge(\Str::random('alnum', 32));
+		if( ! $this->_validation)
+		{
+			$this->_validation = \Validation::forge(\Str::random('alnum', 32));
+
+			if (isset(static::$_rules) and count(static::$_rules))
+			{
+				foreach (static::$_rules as $field => $rules)
+				{
+					$label = (isset(static::$_labels) and array_key_exists($field, static::$_labels)) ? static::$_labels[$field] : $field;
+					$this->_validation->add_field($field, $label, $rules);
+				}
+			}
+		}
 
 		return $this->_validation;
 	}
@@ -699,12 +713,6 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess {
 
 		$this->_validation = $this->validation();
 
-		foreach (static::$_rules as $field => $rules)
-		{
-			$label = (isset(static::$_labels) and array_key_exists($field, static::$_labels)) ? static::$_labels[$field] : $field;
-			$this->_validation->add_field($field, $label, $rules);
-		}
-
 		return $this->_validation->run($vars);
 	}
 
@@ -803,4 +811,33 @@ class Model_Crud extends \Model implements \Iterator, \ArrayAccess {
 		return $values;
 	}
 
+	/**
+	 * Serializable implementation: serialize
+	 *
+	 * @return  array  model data
+	 */
+	public function serialize()
+	{
+		$data = $this->to_array();
+
+		$data['_is_new'] = $this->_is_new;
+		$data['_is_frozen'] = $this->_is_frozen;
+
+		return serialize($data);
+	}
+
+	/**
+	 * Serializable implementation: unserialize
+	 *
+	 * @return  array  model data
+	 */
+	public function unserialize($data)
+	{
+		$data = unserialize($data);
+
+		foreach ($data as $key => $value)
+		{
+			$this->__set($key, $value);
+		}
+	}
 }

@@ -53,7 +53,7 @@ class Date
 	{
 		static::$server_gmt_offset	= \Config::get('server_gmt_offset', 0);
 
-		static::$display_timezone = \Config::get('default_timezone', null);
+		static::$display_timezone = \Config::get('default_timezone') ?: date_default_timezone_get();
 
 		// Ugly temporary windows fix because windows doesn't support strptime()
 		// Better fix will accept custom pattern parsing but only parse numeric input on windows servers
@@ -64,7 +64,7 @@ class Date
 				if ($ts = strtotime($input))
 				{
 					return array(
-						'tm_year' => date('Y', $ts),
+						'tm_year' => date('Y', $ts) - 1900,
 						'tm_mon'  => date('n', $ts) - 1,
 						'tm_mday' => date('j', $ts),
 						'tm_hour' => date('H', $ts),

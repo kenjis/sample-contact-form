@@ -88,6 +88,32 @@ class Str
 	}
 
 	/**
+	 * Checks wether a string has a precific beginning.
+	 *
+	 * @param   string   $str          string to check
+	 * @param   string   $start        beginning to check for
+	 * @param   boolean  $ignore_case  wether to ignore the case
+	 * @return  boolean  wether a string starts with a specified beginning
+	 */
+	public static function starts_with($str, $start, $ignore_case = false)
+	{
+		return (bool) preg_match('/^'.preg_quote($start, '/').'/m'.($ignore_case ? 'i' : ''), $str);
+	}
+
+	/**
+	 * Checks wether a string has a precific ending.
+	 *
+	 * @param   string   $str          string to check
+	 * @param   string   $end          ending to check for
+	 * @param   boolean  $ignore_case  wether to ignore the case
+	 * @return  boolean  wether a string ends with a specified ending
+	 */
+	public static function ends_with($str, $end, $ignore_case = false)
+	{
+		return (bool) preg_match('/'.preg_quote($end, '/').'$/m'.($ignore_case ? 'i' : ''), $str);
+	}
+
+	/**
 	 * substr
 	 *
 	 * @param   string    $str       required
@@ -328,6 +354,62 @@ class Str
 		{
 			return $string;
 		}
+	}
+
+	/**
+	 * Check if a string is json encoded
+	 * 
+	 * @param  string $string string to check
+	 * @return bool
+	 */
+	public static function is_json($string)
+	{
+		json_decode($string);
+		return json_last_error() === JSON_ERROR_NONE;
+	}
+
+	/**
+	 * Check if a string is a valid XML
+	 * 
+	 * @param  string $string string to check
+	 * @return bool
+	 */
+	public static function is_xml($string)
+	{
+		if ( ! defined('LIBXML_COMPACT'))
+		{
+			throw new \FuelException('libxml is required to use Str::is_xml()');
+		}
+
+		$internal_errors = libxml_use_internal_errors();
+		libxml_use_internal_errors(true);
+		$result = simplexml_load_string($string) !== false;
+		libxml_use_internal_errors($internal_errors);
+
+		return $result;
+	}
+
+	/**
+	 * Check if a string is serialized
+	 * 
+	 * @param  string $string string to check
+	 * @return bool
+	 */
+	public static function is_serialized($string)
+	{
+		$array = @unserialize($string);
+		return ! ($array === false and $string !== 'b:0;');
+	}
+
+	/**
+	 * Check if a string is html
+	 * 
+	 * @param  string $string string to check
+	 * @return bool
+	 */
+	public static function is_html($string)
+	{
+		return strlen(strip_tags($string)) < strlen($string);
 	}
 }
 

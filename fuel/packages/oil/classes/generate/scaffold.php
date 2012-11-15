@@ -48,7 +48,7 @@ class Generate_Scaffold
 
 		$subfolder = trim($subfolder, '/');
 
-		if ( ! is_dir(PKGPATH.'oil/views/'.static::$view_subdir.$subfolder))
+		if ( ! is_dir(\Package::exists('oil').'views/'.static::$view_subdir.$subfolder))
 		{
 			throw new Exception('The subfolder for admin templates does not exist or is spelled wrong: '.$subfolder.' ');
 		}
@@ -102,7 +102,8 @@ class Generate_Scaffold
 		// If a folder is used, the entity is the last part
 		$name_parts = explode(DS, $name);
 		$data['singular_name'] = \Inflector::singularize(end($name_parts));
-		$data['plural_name'] = \Inflector::pluralize($data['singular_name']);
+		$data['plural_name'] = \Cli::option('singular') ? $data['singular_name'] : \Inflector::pluralize($data['singular_name']);
+
 		$data['table'] = \Inflector::tableize($model_name);
 		$data['controller_parent'] = static::$controller_parent;
 
@@ -195,7 +196,7 @@ class Generate_Scaffold
 			}
 			else
 			{
-				Generate::create($app_template, file_get_contents(PKGPATH.'oil/views/'.static::$view_subdir.'template.php'), 'view');
+				Generate::create($app_template, file_get_contents(\Package::exists('oil').'views/'.static::$view_subdir.'template.php'), 'view');
 			}
 		}
 
